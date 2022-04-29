@@ -10,7 +10,7 @@
 		"node": ">= 12"
 	},
 	"scripts": {
-		"dev": "cross-env LOG_LEVEL=debug node src/app.js -o kugou kuwo",
+		"dev": "cross-env LOG_LEVEL=debug node src/app.js -e https://music.163.com -o kugou kuwo",
 		"build": "webpack",
 		"pkg": "pkg . --out-path=dist/",
 		"test": "jest"
