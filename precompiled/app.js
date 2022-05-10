@@ -1956,7 +1956,8 @@ module.exports = {
 
 "use strict";
 
-const { cacheStorage , CacheStorageGroup , getManagedCacheStorage ,  } = __webpack_require__(410);
+const { getManagedCacheStorage ,  } = __webpack_require__(410);
+const { tryGetMatchedData  } = __webpack_require__(1134);
 const insure = __webpack_require__(5577);
 const select = __webpack_require__(7088);
 const request = __webpack_require__(1540);
@@ -1971,7 +1972,10 @@ const format = (song)=>{
         }
     };
 };
-const search = (info)=>{
+const search = async (info)=>{
+    const songId = info.id;
+    const matchedSongData = await tryGetMatchedData('bilibili', songId);
+    if (matchedSongData) return matchedSongData.id;
     const url = 'https://api.bilibili.com/audio/music-service-c/s?' + 'search_type=music&page=1&pagesize=30&' + `keyword=${encodeURIComponent(info.keyword)}`;
     return request('GET', url).then((response)=>response.json()
     ).then((jsonBody)=>{
@@ -2197,6 +2201,7 @@ const insure = __webpack_require__(5577);
 const select = __webpack_require__(7088);
 const crypto = __webpack_require__(20);
 const request = __webpack_require__(1540);
+const { tryGetMatchedData  } = __webpack_require__(1134);
 const { getManagedCacheStorage  } = __webpack_require__(410);
 const format = (song)=>{
     return {
@@ -2216,7 +2221,10 @@ const format = (song)=>{
         }
     };
 };
-const search = (info)=>{
+const search = async (info)=>{
+    const songId = info.id;
+    const matchedSongData = await tryGetMatchedData('kugou', songId);
+    if (matchedSongData) return matchedSongData.id;
     const url = // 'http://songsearch.kugou.com/song_search_v2?' +
     'http://mobilecdn.kugou.com/api/v3/search/song?' + 'keyword=' + encodeURIComponent(info.keyword) + '&page=1&pagesize=10';
     return request('GET', url).then((response)=>response.json()
@@ -2279,6 +2287,7 @@ const insure = __webpack_require__(5577);
 const select = __webpack_require__(7088);
 const crypto = __webpack_require__(20);
 const request = __webpack_require__(1540);
+const { tryGetMatchedData  } = __webpack_require__(1134);
 const { getManagedCacheStorage  } = __webpack_require__(410);
 const format = (song)=>({
         id: song.musicrid.split('_').pop(),
@@ -2296,7 +2305,7 @@ const format = (song)=>({
         )
     })
 ;
-const search = (info)=>{
+const search = async (info)=>{
     // const url =
     // 	// 'http://search.kuwo.cn/r.s?' +
     // 	// 'ft=music&itemset=web_2013&client=kt&' +
@@ -2322,6 +2331,9 @@ const search = (info)=>{
     // 	else
     // 		return Promise.reject()
     // })
+    const songId = info.id;
+    const matchedSongData = await tryGetMatchedData('kuwo', songId);
+    if (matchedSongData) return matchedSongData.id;
     const keyword = encodeURIComponent(info.keyword.replace(' - ', ''));
     const url = `http://www.kuwo.cn/api/www/search/searchMusicBykeyWord?key=${keyword}&pn=1&rn=30`;
     const token = Math.random().toString(16).slice(-11).toUpperCase();
@@ -2385,7 +2397,7 @@ __webpack_require__(6859);
 const find = __webpack_require__(3664);
 const request = __webpack_require__(1540);
 const { PROVIDERS: providers , DEFAULT_SOURCE: defaultSrc ,  } = __webpack_require__(2034);
-const { isHostWrapper  } = __webpack_require__(1134);
+const { isHostWrapper , tryGetMatchedData , tryGetSelectSource ,  } = __webpack_require__(1134);
 const SongNotAvailable = __webpack_require__(9612);
 const RequestFailed = __webpack_require__(4922);
 const IncompleteAudioData = __webpack_require__(3109);
@@ -2435,7 +2447,9 @@ const logger = logScope('provider/match');
     return song;
 }
 async function match(id, source1, data) {
-    const candidate = (source1 || global.source || defaultSrc).filter((name)=>name in providers
+    const matchedSongData = await tryGetMatchedData('main', id);
+    if (matchedSongData) return matchedSongData;
+    const candidate = (source1 || await tryGetSelectSource(id) || global.source || defaultSrc).filter((name)=>name in providers
     );
     const audioInfo = await find(id, data);
     const audioData = await Promise.any(candidate.map(async (source)=>getAudioFromSource(source, audioInfo).catch((e)=>{
@@ -2738,6 +2752,7 @@ module.exports = {
 const insure = __webpack_require__(5577);
 const select = __webpack_require__(7088);
 const request = __webpack_require__(1540);
+const { tryGetMatchedData  } = __webpack_require__(1134);
 const { getManagedCacheStorage  } = __webpack_require__(410);
 const headers = {
     origin: 'http://y.qq.com/',
@@ -2762,7 +2777,10 @@ const format = (song)=>({
         )
     })
 ;
-const search = (info)=>{
+const search = async (info)=>{
+    const songId = info.id;
+    const matchedSongData = await tryGetMatchedData('qq', songId);
+    if (matchedSongData) return matchedSongData.id;
     const url = 'https://c.y.qq.com/soso/fcgi-bin/client_search_cp?' + 'ct=24&qqmusic_ver=1298&remoteplace=txt.yqq.center&' + 't=0&aggr=1&cr=1&catZhida=1&lossless=0&flag_qc=0&p=1&n=20&w=' + encodeURIComponent(info.keyword) + '&' + 'g_tk=5381&jsonpCallback=MusicJsonCallback10005317669353331&loginUin=0&hostUin=0&' + 'format=jsonp&inCharset=utf8&outCharset=utf-8&notice=0&platform=yqq&needNewCode=0';
     return request('GET', url).then((response)=>response.jsonp()
     ).then((jsonBody)=>{
@@ -2840,11 +2858,16 @@ module.exports = {
 "use strict";
 
 module.exports = (list, info)=>{
-    const { duration  } = info;
-    const song1 = list.slice(0, 5) // 挑前5个结果
-    .find((song)=>song.duration && Math.abs(song.duration - duration) < 5 * 1e3
+    const { duration , album  } = info;
+    const sliceList = list.slice(0, 5); // 挑前5个结果
+    /* Check if the album is matched */ const albumMatchedSong = sliceList.find((s)=>{
+        var ref;
+        return ((ref = s.album) === null || ref === void 0 ? void 0 : ref.name) == album.name;
+    }); // 第一个专辑名称一样的
+    if (albumMatchedSong) return albumMatchedSong;
+    /* Check if the duration is matched */ const durationMatchedSong = sliceList.find((s)=>s.duration && Math.abs(s.duration - duration) < 5 * 1e3
     ); // 第一个时长相差5s (5000ms) 之内的结果
-    if (song1) return song1;
+    if (durationMatchedSong) return durationMatchedSong;
     else return list[0]; // 没有就播放第一条
 };
 module.exports.ENABLE_FLAC = (process.env.ENABLE_FLAC || '').toLowerCase() === 'true';
@@ -3637,15 +3660,90 @@ module.exports = {
 /***/ }),
 
 /***/ 1134:
-/***/ ((module) => {
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
 "use strict";
 
+// @ts-check
+const fs = __webpack_require__(7147);
+const path = __webpack_require__(1017);
+const { logScope  } = __webpack_require__(9362);
+const logger = logScope('utilities');
+/**
+ * @typedef {{ source: Record<string, string> }} MusicReplaceRecordSource
+ * @typedef {Record<string, unknown>} MusicReplaceRecordEntryField
+ * @typedef {Record<string, MusicReplaceRecordEntryField>} MusicReplaceRecordEntry
+ * @typedef {string} MusicReplaceRecordSourceId
+ * @typedef {Partial<MusicReplaceRecordSource & Record<MusicReplaceRecordSourceId, MusicReplaceRecordEntry>>} MusicUriRecord
+ */ /**
+ * Retrieve the configuration of `musicExample.json`.
+ *
+ * @returns {Promise<MusicUriRecord | {}>} If no `musicExample.json` found or invalid, returns `{}`.
+ */ const _readConfigData = async ()=>{
+    try {
+        const fileName = process.env.MUSIC_FILE || 'musicExample.json';
+        const filePath = path.join(__dirname, '.', fileName);
+        const musicDataRaw = await fs.promises.readFile(filePath);
+        return JSON.parse(musicDataRaw.toString("utf-8"));
+    } catch (error) {
+        logger.warn('Unable to load the musicExample data. Ignoring.', error.message);
+    }
+    return {};
+};
+/**
+ * The singleton music configuration data.
+ *
+ * If {@link getSingletonConfigData()} hasn't called, it will be `null`;
+ * otherwise, it will be the value returned by {@link _readConfigData()}
+ *
+ * @type {MusicUriRecord | null}
+ */ let _musicConfigData = null;
+/**
+ * Retrieve the *singleton* configuration of `musicExample.json`.
+ *
+ * @returns {Promise<MusicUriRecord>}
+ */ const getSingletonConfigData = async ()=>{
+    if (_musicConfigData === null) {
+        _musicConfigData = await _readConfigData();
+    }
+    return _musicConfigData;
+};
+/**
+ * Try to get the matched data from {@link musicConfigData}.
+ *
+ * @param {string} source
+ * @param {string} songId
+ * @returns {Promise<MusicReplaceRecordEntryField | null>}
+ */ const tryGetMatchedData = async (source, songId)=>{
+    var ref;
+    let matchedSongData = (ref = (await getSingletonConfigData())[source]) === null || ref === void 0 ? void 0 : ref[songId];
+    if (matchedSongData) {
+        logger.info(matchedSongData, `${songId} has the matched source (${source})`);
+    }
+    return matchedSongData;
+};
+/**
+ * Try to get the sources which has the matched record to return.
+ *
+ * @param {string} songId the song ID.
+ * @returns If we found a source that has the match in {@link musicConfigData},
+ * we return `[source]` so `select()` return that data directly; otherwise,
+ * we return `null` to make `select()` to try other sources.
+ */ const tryGetSelectSource = async (songId)=>{
+    var ref;
+    let source = (ref = (await getSingletonConfigData()).source) === null || ref === void 0 ? void 0 : ref[songId];
+    if (source) {
+        logger.info(`${songId} selected source (${source})`);
+    }
+    return source ? [
+        source
+    ] : null;
+};
 /**
  * Does the hostname of `URL` equal `host`?
  *
- * @param url {string}
- * @param host {string}
+ * @param {string} url
+ * @param {string} host
  * @return {boolean}
  */ const isHost = (url, host)=>{
     // FIXME: Due to #118, we can only check the url
@@ -3663,7 +3761,9 @@ module.exports = {
 ;
 module.exports = {
     isHost,
-    isHostWrapper
+    isHostWrapper,
+    tryGetSelectSource,
+    tryGetMatchedData
 };
 
 
