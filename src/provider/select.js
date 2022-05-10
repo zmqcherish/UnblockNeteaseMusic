@@ -11,7 +11,6 @@ module.exports = (list, info) => {
 		(s) => s.duration && Math.abs(s.duration - duration) < 5 * 1e3
 	); // 第一个时长相差5s (5000ms) 之内的结果
 	if (durationMatchedSong) return durationMatchedSong;
-
 	else return list[0]; // 没有就播放第一条
 };
 

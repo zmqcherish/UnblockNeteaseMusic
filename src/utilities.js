@@ -24,13 +24,16 @@ const _readConfigData = async () => {
 		const filePath = path.join(__dirname, '.', fileName);
 		const musicDataRaw = await fs.promises.readFile(filePath);
 
-		return JSON.parse(musicDataRaw.toString("utf-8"));
+		return JSON.parse(musicDataRaw.toString('utf-8'));
 	} catch (error) {
-		logger.warn('Unable to load the musicExample data. Ignoring.', error.message);
+		logger.warn(
+			'Unable to load the musicExample data. Ignoring.',
+			error.message
+		);
 	}
 
 	return {};
-}
+};
 
 /**
  * The singleton music configuration data.

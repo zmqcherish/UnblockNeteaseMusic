@@ -1,6 +1,4 @@
-const {
-	getManagedCacheStorage,
-} = require('../cache');
+const { getManagedCacheStorage } = require('../cache');
 const { tryGetMatchedData } = require('../utilities');
 const insure = require('./insure');
 const select = require('./select');

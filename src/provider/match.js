@@ -65,7 +65,7 @@ async function match(id, source, data) {
 
 	const candidate = (
 		source ||
-		await tryGetSelectSource(id) ||
+		(await tryGetSelectSource(id)) ||
 		global.source ||
 		defaultSrc
 	).filter((name) => name in providers);
